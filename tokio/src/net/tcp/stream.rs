@@ -1,3 +1,4 @@
+use super::sock_opt::SockOpt;
 use crate::io::{AsyncRead, AsyncWrite};
 use crate::net::tcp::split::{split, ReadHalf, WriteHalf};
 use crate::net::util::IoResource;
@@ -12,6 +13,7 @@ use std::io::{self, Read, Write};
 use std::net::{self, Shutdown, SocketAddr};
 use std::pin::Pin;
 use std::task::{Context, Poll};
+use std::time::Duration;
 
 /// An I/O object representing a TCP stream connected to a remote endpoint.
 ///
@@ -300,6 +302,153 @@ impl TcpStream {
         self.io.get_ref().set_nodelay(nodelay)
     }
 
+    /// Gets the value of the `SO_RCVBUF` option on this socket.
+    ///
+    /// For more information about this option, see [`set_recv_buffer_size`].
+    ///
+    /// [`set_recv_buffer_size`]: #tymethod.set_recv_buffer_size
+    ///
+    /// # Examples
+    ///
+    /// ```no_run
+    /// use tokio::net::TcpStream;
+    ///
+    /// # async fn dox() -> Result<(), Box<dyn std::error::Error>> {
+    /// let stream = TcpStream::connect("127.0.0.1:8080").await?;
+    ///
+    /// println!("{:?}", stream.recv_buffer_size()?);
+    /// # Ok(())
+    /// # }
+    /// ```
+    pub fn recv_buffer_size(&self) -> io::Result<usize> {
+        self.io.get_ref().recv_buffer_size()
+    }
+
+    /// Sets the value of the `SO_RCVBUF` option on this socket.
+    ///
+    /// Changes the size of the operating system's receive buffer associated
+    /// with the socket.
+    ///
+    /// # Examples
+    ///
+    /// ```no_run
+    /// use tokio::net::TcpStream;
+    ///
+    /// # async fn dox() -> Result<(), Box<dyn std::error::Error>> {
+    /// let stream = TcpStream::connect("127.0.0.1:8080").await?;
+    ///
+    /// stream.set_recv_buffer_size(100)?;
+    /// # Ok(())
+    /// # }
+    /// ```
+    pub fn set_recv_buffer_size(&self, size: usize) -> io::Result<()> {
+        self.io.get_ref().set_recv_buffer_size(size)
+    }
+
+    /// Gets the value of the `SO_SNDBUF` option on this socket.
+    ///
+    /// For more information about this option, see [`set_send_buffer`].
+    ///
+    /// [`set_send_buffer`]: #tymethod.set_send_buffer
+    ///
+    /// # Examples
+    ///
+    /// Returns whether keepalive messages are enabled on this socket, and if so
+    /// the duration of time between them.
+    ///
+    /// For more information about this option, see [`set_keepalive`].
+    ///
+    /// [`set_keepalive`]: #tymethod.set_keepalive
+    ///
+    /// # Examples
+    ///
+    /// ```no_run
+    /// use tokio::net::TcpStream;
+    ///
+    /// # async fn dox() -> Result<(), Box<dyn std::error::Error>> {
+    /// let stream = TcpStream::connect("127.0.0.1:8080").await?;
+    ///
+    /// println!("{:?}", stream.send_buffer_size()?);
+    /// # Ok(())
+    /// # }
+    /// ```
+    pub fn send_buffer_size(&self) -> io::Result<usize> {
+        self.io.get_ref().send_buffer_size()
+    }
+
+    /// Sets the value of the `SO_SNDBUF` option on this socket.
+    ///
+    /// Changes the size of the operating system's send buffer associated with
+    /// the socket.
+    ///
+    /// # Examples
+    ///
+    /// ```no_run
+    /// use tokio::net::TcpStream;
+    ///
+    /// # async fn dox() -> Result<(), Box<dyn std::error::Error>> {
+    /// let stream = TcpStream::connect("127.0.0.1:8080").await?;
+    ///
+    /// stream.set_send_buffer_size(100)?;
+    /// # Ok(())
+    /// # }
+    /// ```
+    pub fn set_send_buffer_size(&self, size: usize) -> io::Result<()> {
+        self.io.get_ref().set_send_buffer_size(size)
+    }
+
+    /// Returns whether keepalive messages are enabled on this socket, and if so
+    /// the duration of time between them.
+    ///
+    /// For more information about this option, see [`set_keepalive`].
+    ///
+    /// [`set_keepalive`]: #tymethod.set_keepalive
+    ///
+    /// # Examples
+    ///
+    /// ```no_run
+    /// use tokio::net::TcpStream;
+    ///
+    /// # async fn dox() -> Result<(), Box<dyn std::error::Error>> {
+    /// let stream = TcpStream::connect("127.0.0.1:8080").await?;
+    ///
+    /// println!("{:?}", stream.keepalive()?);
+    /// # Ok(())
+    /// # }
+    /// ```
+    pub fn keepalive(&self) -> io::Result<Option<Duration>> {
+        self.io.get_ref().keepalive()
+    }
+
+    /// Sets whether keepalive messages are enabled to be sent on this socket.
+    ///
+    /// On Unix, this option will set the `SO_KEEPALIVE` as well as the
+    /// `TCP_KEEPALIVE` or `TCP_KEEPIDLE` option (depending on your platform).
+    /// On Windows, this will set the `SIO_KEEPALIVE_VALS` option.
+    ///
+    /// If `None` is specified then keepalive messages are disabled, otherwise
+    /// the duration specified will be the time to remain idle before sending a
+    /// TCP keepalive probe.
+    ///
+    /// Some platforms specify this value in seconds, so sub-second
+    /// specifications may be omitted.
+    ///
+    /// # Examples
+    ///
+    /// ```no_run
+    /// use tokio::net::TcpStream;
+    ///
+    /// # async fn dox() -> Result<(), Box<dyn std::error::Error>> {
+    /// let stream = TcpStream::connect("127.0.0.1:8080").await?;
+    ///
+    /// stream.set_keepalive(None)?;
+    /// # Ok(())
+    /// # }
+    /// ```
+    pub fn set_keepalive(&self, keepalive: Option<Duration>) -> io::Result<()> {
+        self.io.get_ref().set_keepalive(keepalive)
+    }
+
     /// Gets the value of the `IP_TTL` option for this socket.
     ///
     /// For more information about this option, see [`set_ttl`].
@@ -341,6 +490,57 @@ impl TcpStream {
     /// ```
     pub fn set_ttl(&self, ttl: u32) -> io::Result<()> {
         self.io.get_ref().set_ttl(ttl)
+    }
+
+    /// Reads the linger duration for this socket by getting the `SO_LINGER`
+    /// option.
+    ///
+    /// For more information about this option, see [`set_linger`].
+    ///
+    /// [`set_linger`]: #tymethod.set_linger
+    ///
+    /// # Examples
+    ///
+    /// ```no_run
+    /// use tokio::net::TcpStream;
+    ///
+    /// # async fn dox() -> Result<(), Box<dyn std::error::Error>> {
+    /// let stream = TcpStream::connect("127.0.0.1:8080").await?;
+    ///
+    /// println!("{:?}", stream.linger()?);
+    /// # Ok(())
+    /// # }
+    /// ```
+    pub fn linger(&self) -> io::Result<Option<Duration>> {
+        self.io.get_ref().linger()
+    }
+
+    /// Sets the linger duration of this socket by setting the `SO_LINGER`
+    /// option.
+    ///
+    /// This option controls the action taken when a stream has unsent messages
+    /// and the stream is closed. If `SO_LINGER` is set, the system
+    /// shall block the process  until it can transmit the data or until the
+    /// time expires.
+    ///
+    /// If `SO_LINGER` is not specified, and the stream is closed, the system
+    /// handles the call in a way that allows the process to continue as quickly
+    /// as possible.
+    ///
+    /// # Examples
+    ///
+    /// ```no_run
+    /// use tokio::net::TcpStream;
+    ///
+    /// # async fn dox() -> Result<(), Box<dyn std::error::Error>> {
+    /// let stream = TcpStream::connect("127.0.0.1:8080").await?;
+    ///
+    /// stream.set_linger(None)?;
+    /// # Ok(())
+    /// # }
+    /// ```
+    pub fn set_linger(&self, dur: Option<Duration>) -> io::Result<()> {
+        self.io.get_ref().set_linger(dur)
     }
 
     /// Split a `TcpStream` into a read half and a write half, which can be used

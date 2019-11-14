@@ -23,6 +23,8 @@ pub use self::incoming::Incoming;
 mod listener;
 pub use self::listener::TcpListener;
 
+mod sock_opt;
+
 pub mod split;
 
 mod stream;

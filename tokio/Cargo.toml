@@ -82,6 +82,7 @@ uds = ["io-driver", "libc"]
 tokio-macros = { version = "=0.2.0-alpha.6", optional = true, path = "../tokio-macros" }
 
 bytes = "0.4"
+cfg-if = "0.1.0"
 futures-core = "0.3.0"
 futures-sink = "0.3.0"
 futures-util = { version = "0.3.0", features = ["sink", "channel"] }
